@@ -1,0 +1,79 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: shedrive-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/part-of: shedrive
+spec:
+  groups:
+    - name: shedrive.api
+      rules:
+        - alert: SheDriveBackendDown
+          expr: up{namespace="shedrive", job="shedrive-backend"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: SheDrive backend scrape target is down
+            description: Prometheus has failed to scrape the SheDrive backend for 5 minutes.
+
+        - alert: SheDriveFaceServiceDown
+          expr: up{namespace="shedrive", job="shedrive-face"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: SheDrive face service scrape target is down
+            description: Prometheus has failed to scrape the face service for 5 minutes.
+
+        - alert: SheDriveHighErrorRate
+          expr: |
+            sum(rate(shedrive_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(shedrive_http_requests_total[5m])), 0.001)
+            > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: SheDrive API 5xx rate is above 5 percent
+            description: More than 5 percent of API requests have returned 5xx for 10 minutes.
+
+        - alert: SheDriveHighLatency
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (rate(shedrive_http_request_duration_seconds_bucket[5m]))
+            ) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: SheDrive p95 API latency is above 1 second
+            description: The 95th percentile API request latency has exceeded 1 second for 10 minutes.
+
+        - alert: SheDriveOpenSosAlerts
+          expr: sum(shedrive_open_sos_alerts) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: SheDrive has unresolved SOS alerts
+            description: At least one SOS alert has stayed open for 5 minutes. Check the admin safety desk.
+
+    - name: shedrive.face
+      rules:
+        - alert: SheDriveFaceNoFaceSpike
+          expr: |
+            sum(rate(shedrive_face_verifications_total{decision="no_face"}[15m]))
+            /
+            clamp_min(sum(rate(shedrive_face_verifications_total[15m])), 0.001)
+            > 0.5
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: More than half of face verifications return no_face
+            description: Check camera quality, upload limits and the face-service detector.

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SheDrive is a women-only ride-hailing platform. Name your fare, ride with verified women drivers, and stay connected with live tracking and one-tap SOS."
+    />
+    <meta name="theme-color" content="#05030f" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2305030f'/%3E%3Cpath d='M24 6 39 15v18L24 42 9 33V15L24 6Z' fill='none' stroke='%234ff0ff' stroke-width='2'/%3E%3Cpath d='M29 19c-1.3-1.3-3-2-4.9-2-2.7 0-4.6 1.5-4.6 3.6 0 2 1.5 3 4.4 3.6 3 .7 4.8 2 4.8 4.3 0 2.5-2.2 4.2-5.2 4.2-2.3 0-4.4-.8-5.8-2.3' fill='none' stroke='%23ff2bd6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <title>SheDrive - Your city. Your fare. Your rules.</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/design-system.css" />
+    <link rel="stylesheet" href="/css/landing.css" />
+
+    <script>
+      // Apply saved accessibility preference before first paint to avoid a flash.
+      (function () {
+        try {
+          var stored = localStorage.getItem("shedrive:reduce-effects");
+          var osReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var reduce = stored === null ? osReduced : stored === "1";
+          if (reduce) document.documentElement.classList.add("reduce-effects");
+        } catch (e) {
+          /* localStorage can be blocked; the page still works. */
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="page-veil" aria-hidden="true"></div>
+
+    <div class="cursor-dot" aria-hidden="true"></div>
+    <div class="cursor-ring" aria-hidden="true"></div>
+
+    <div id="preloader" class="preloader" role="status" aria-live="polite">
+      <div class="preloader-inner">
+        <div class="preloader-logo">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span>SheDrive</span>
+        </div>
+        <p class="preloader-label" id="preloader-label">Waking the city</p>
+        <div class="preloader-track"><span id="preloader-bar"></span></div>
+        <p class="preloader-percent" id="preloader-percent">0%</p>
+      </div>
+    </div>
+
+    <header class="site-nav" id="site-nav">
+      <div class="shell nav-inner">
+        <a class="brand" href="/" aria-label="SheDrive home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-text">She<span>Drive</span></span>
+        </a>
+
+        <nav class="nav-links" id="nav-links" aria-label="Primary">
+          <a href="#why">Why SheDrive</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#safety">Safety</a>
+          <a href="/auth.html?mode=login">Log in</a>
+          <a class="nav-cta" href="/auth.html">Get started</a>
+        </nav>
+
+        <div class="nav-actions">
+          <button
+            id="reduce-effects"
+            class="icon-btn"
+            type="button"
+            aria-pressed="false"
+            title="Reduce visual effects"
+          >
+            <span class="sr-only">Reduce visual effects</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6" />
+            </svg>
+          </button>
+
+          <button
+            id="nav-toggle"
+            class="icon-btn nav-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="nav-links"
+          >
+            <span class="sr-only">Open menu</span>
+            <span class="nav-toggle-bars" aria-hidden="true"><i></i><i></i></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ================= 3D HERO ================= -->
+      <section id="hero" class="hero" aria-labelledby="hero-title">
+        <div class="hero-stage">
+          <div class="hero-canvas-wrap" aria-hidden="true">
+            <canvas id="city-canvas"></canvas>
+            <div id="hero-fallback" class="hero-fallback">
+              <div class="fallback-glow fallback-glow-a"></div>
+              <div class="fallback-glow fallback-glow-b"></div>
+              <div class="fallback-skyline"></div>
+            </div>
+          </div>
+
+          <div class="hero-vignette" aria-hidden="true"></div>
+          <div class="hero-grid" aria-hidden="true"></div>
+
+          <div class="shell hero-content">
+            <h1 class="hero-title" id="hero-title" aria-label="Your city. Your fare. Your rules.">
+              <span class="line"><span class="word">Your</span> <span class="word">city.</span></span>
+              <span class="line"><span class="word">Your</span> <span class="word">fare.</span></span>
+              <span class="line gradient-text"><span class="word">Your</span> <span class="word">rules.</span></span>
+            </h1>
+
+            <p class="hero-sub" data-reveal>
+              A women-only ride-hailing platform where you propose the price, drivers
+              accept or counter, and every journey is tracked from pickup to doorstep.
+            </p>
+
+            <div class="hero-actions" data-reveal>
+              <a class="btn btn-primary" href="#how-it-works" data-magnetic>
+                See how it works
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+              <a class="btn btn-ghost" href="#why" data-magnetic>Why women-only?</a>
+            </div>
+
+            <ul class="hero-stats" data-reveal aria-label="Highlights">
+              <li><strong>100%</strong><span>women drivers</span></li>
+              <li><strong>You</strong><span>set the fare</span></li>
+              <li><strong>1 tap</strong><span>to call for help</span></li>
+            </ul>
+          </div>
+
+          <div class="hero-hud hero-hud-right" aria-hidden="true">
+            <span>28.6139 N</span>
+            <span>77.2090 E</span>
+            <span class="hud-live"><i></i>LIVE</span>
+          </div>
+
+          <div class="scroll-cue" aria-hidden="true">
+            <span>Scroll to fly</span>
+            <i></i>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MARQUEE ================= -->
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+          <span>Women only, by design</span><span class="marquee-dot"></span>
+          <span>Name your fare</span><span class="marquee-dot"></span>
+          <span>Live trip tracking</span><span class="marquee-dot"></span>
+          <span>One-tap SOS</span><span class="marquee-dot"></span>
+          <span>Human review, always</span><span class="marquee-dot"></span>
+          <span>Women only, by design</span><span class="marquee-dot"></span>
+          <span>Name your fare</span><span class="marquee-dot"></span>
+          <span>Live trip tracking</span><span class="marquee-dot"></span>
+          <span>One-tap SOS</span><span class="marquee-dot"></span>
+          <span>Human review, always</span><span class="marquee-dot"></span>
+        </div>
+      </div>
+
+      <!-- ================= WHY ================= -->
+      <section id="why" class="section" aria-labelledby="why-title">
+        <div class="shell">
+          <div class="section-head">
+            <p class="eyebrow" data-reveal>Why SheDrive</p>
+            <h2 id="why-title" data-reveal>Built around women's safety,<br /><span class="gradient-text">not as an afterthought.</span></h2>
+            <p class="section-lead" data-reveal>
+              Every account is verified, every fare is a conversation, and every ride
+              keeps the people you trust in the loop.
+            </p>
+          </div>
+
+          <div class="card-grid">
+            <article class="glass-card tilt-card" data-reveal>
+              <span class="card-index">01</span>
+              <div class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.2c0 4.4 3.1 8.1 7.5 9.3 4.4-1.2 7.5-4.9 7.5-9.3V6L12 3Z" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="m8.8 12 2.1 2.1 4.4-4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </div>
+              <h3>Women only, verified</h3>
+              <p>
+                Signup includes a selfie check and, when the model is unsure, a private
+                human review. Automated predictions are a first pass, never the final word.
+              </p>
+              <span class="card-foot">Face check + human fallback</span>
+            </article>
+
+            <article class="glass-card tilt-card" data-reveal>
+              <span class="card-index">02</span>
+              <div class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 8.5h16M4 15.5h16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /><circle cx="9" cy="8.5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5" /><circle cx="15.5" cy="15.5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+              </div>
+              <h3>Name your fare</h3>
+              <p>
+                Suggest what the trip is worth to you. Nearby drivers can accept or send a
+                counter-offer, and you choose the one that feels right.
+              </p>
+              <span class="card-foot">Negotiation, not surge pricing</span>
+            </article>
+
+            <article class="glass-card tilt-card" data-reveal>
+              <span class="card-index">03</span>
+              <div class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.5" /><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M3 5.5c1.8-1.7 3.8-2.6 5.6-3M21 5.5c-1.8-1.7-3.8-2.6-5.6-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+              </div>
+              <h3>Safety that follows you</h3>
+              <p>
+                Watch your driver approach in real time, share the trip, and reach your
+                emergency contacts and our team with one deliberate SOS press.
+              </p>
+              <span class="card-foot">Live tracking + SOS</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= HOW IT WORKS ================= -->
+      <section id="how-it-works" class="section section-alt" aria-labelledby="how-title">
+        <div class="shell">
+          <div class="section-head split-head">
+            <div>
+              <p class="eyebrow" data-reveal>How it works</p>
+              <h2 id="how-title" data-reveal>Three steps.<br /><span class="gradient-text">No guesswork.</span></h2>
+            </div>
+            <p class="section-lead" data-reveal>
+              Designed for a late lecture, a night shift, or a night out. Clear at every
+              stage, with a real person behind the safety net.
+            </p>
+          </div>
+
+          <ol class="steps">
+            <li class="step glass-card" data-reveal>
+              <span class="step-number">01</span>
+              <h3>Verify your profile</h3>
+              <p>Take a selfie, add your phone number, and choose rider or driver. Most accounts clear instantly; the rest go to human review.</p>
+              <span class="pill">Your account is under review, never "rejected"</span>
+            </li>
+            <li class="step glass-card" data-reveal>
+              <span class="step-number">02</span>
+              <h3>Set your pickup and fare</h3>
+              <p>Drop a pickup pin, choose a destination, then propose a fare that works for you. Nearby women drivers respond with offers.</p>
+              <span class="pill">You pick the offer, not an algorithm</span>
+            </li>
+            <li class="step glass-card" data-reveal>
+              <span class="step-number">03</span>
+              <h3>Ride with the city in view</h3>
+              <p>Follow the car live, keep your emergency contacts one tap away, then pay and rate the trip at the door.</p>
+              <span class="pill">Live tracking from accept to arrival</span>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ================= SAFETY ================= -->
+      <section id="safety" class="section" aria-labelledby="safety-title">
+        <div class="shell safety-grid">
+          <div class="safety-copy">
+            <p class="eyebrow" data-reveal>Privacy by design</p>
+            <h2 id="safety-title" data-reveal>Your face proves you're you.<br /><span class="gradient-text">It never becomes a file.</span></h2>
+            <p class="section-lead" data-reveal>
+              The selfie you take at signup is processed in memory by our verification
+              service, converted into a numeric embedding, and then discarded. No raw
+              images are kept, logged, or sold. Ever.
+            </p>
+            <div class="safety-points" data-reveal>
+              <span>In-memory processing</span>
+              <span>Embeddings only</span>
+              <span>Human review fallback</span>
+            </div>
+          </div>
+
+          <div class="glass-card safety-panel" data-reveal>
+            <div class="scan-visual" aria-hidden="true">
+              <span class="scan-ring ring-a"></span>
+              <span class="scan-ring ring-b"></span>
+              <span class="scan-ring ring-c"></span>
+              <span class="scan-core"></span>
+              <span class="scan-line"></span>
+            </div>
+            <p class="safety-panel-label">Verification status</p>
+            <p class="safety-panel-status">Pending human review</p>
+            <p class="safety-panel-note">
+              When confidence is below the threshold, a person checks your ID and
+              documents instead of an algorithm deciding for you.
+            </p>
+            <span class="pill pill-soft">A kinder edge case</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= JOIN ================= -->
+      <section id="join" class="section join-section" aria-labelledby="join-title">
+        <div class="shell">
+          <div class="join-panel glass-card" data-reveal>
+            <div class="join-orb join-orb-a" aria-hidden="true"></div>
+            <div class="join-orb join-orb-b" aria-hidden="true"></div>
+            <p class="eyebrow">The city is waiting</p>
+            <h2 id="join-title">Your city.<br /><span class="gradient-text">Your rules.</span></h2>
+            <p>
+              Join a ride-hailing network that treats safety, privacy, and a fair fare
+              as the whole point.
+            </p>
+            <div class="join-actions">
+              <a class="btn btn-primary" href="/auth.html" data-magnetic>Create your account</a>
+              <a class="btn btn-ghost" href="#safety" data-magnetic>Read our privacy approach</a>
+            </div>
+            <p class="join-note">Verified signup is open. Drivers will also need a licence.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-inner">
+        <a class="brand" href="/" aria-label="SheDrive home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-text">She<span>Drive</span></span>
+        </a>
+        <p class="footer-note">Women-only ride-hailing. Selfies are processed in memory and never stored.</p>
+        <p class="footer-copy">&copy; 2026 SheDrive. Final-year project.</p>
+      </div>
+    </footer>
+
+    <script type="module" src="/js/landing.js"></script>
+  </body>
+</html>

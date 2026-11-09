@@ -1,0 +1,50 @@
+# Internal services accept traffic only from backend pods. Enforcement on EKS
+# requires a CNI that supports NetworkPolicy (for example VPC CNI with network
+# policy enabled or Calico).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shedrive-face-ingress
+  namespace: shedrive
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: shedrive-face
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: shedrive-backend
+      ports:
+        - protocol: TCP
+          port: 8000
+    # Prometheus in the monitoring namespace scrapes /metrics.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shedrive-redis-ingress
+  namespace: shedrive
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: shedrive-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: shedrive-backend
+      ports:
+        - protocol: TCP
+          port: 6379

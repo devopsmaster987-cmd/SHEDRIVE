@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SheDrive admin command centre: live safety alerts, city analytics, user moderation and ride operations."
+    />
+    <meta name="theme-color" content="#05030f" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2305030f'/%3E%3Cpath d='M24 6 39 15v18L24 42 9 33V15L24 6Z' fill='none' stroke='%234ff0ff' stroke-width='2'/%3E%3Cpath d='M29 19c-1.3-1.3-3-2-4.9-2-2.7 0-4.6 1.5-4.6 3.6 0 2 1.5 3 4.4 3.6 3 .7 4.8 2 4.8 4.3 0 2.5-2.2 4.2-5.2 4.2-2.3 0-4.4-.8-5.8-2.3' fill='none' stroke='%23ff2bd6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <title>Admin overview - SheDrive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/design-system.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/phase7.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("shedrive:reduce-effects");
+          var osReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var reduce = stored === null ? osReduced : stored === "1";
+          if (reduce) document.documentElement.classList.add("reduce-effects");
+        } catch (e) {
+          /* Preferences are optional. */
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="app-page admin-page">
+    <a class="skip-link" href="#app-content">Skip to content</a>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="app-nav">
+      <div class="app-nav-inner shell">
+        <a class="brand" id="app-brand" href="/" aria-label="SheDrive home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-text">She<span>Drive</span></span>
+        </a>
+
+        <nav class="app-nav-links" id="app-nav-links" aria-label="Primary"></nav>
+        <div class="app-actions" id="app-actions"></div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="app-loading" id="app-loading" role="status" aria-live="polite">
+        <div>
+          <span class="app-loading-mark" aria-hidden="true"></span>
+          <strong>Opening the command centre</strong>
+          <p>Loading safety alerts, city pulse and account operations.</p>
+        </div>
+      </div>
+
+      <div class="app-error" id="app-error" hidden>
+        <div class="app-error-card glass-card">
+          <p class="eyebrow">Console unavailable</p>
+          <h1 id="app-error-title">The command centre is offline</h1>
+          <p id="app-error-message">Check that the SheDrive API is running, then try again.</p>
+          <a class="btn btn-primary" id="app-error-action" href="/">Try again</a>
+        </div>
+      </div>
+
+      <div id="app-content" hidden>
+        <div class="app-banner" id="app-banner" hidden></div>
+
+        <header class="page-head admin-head">
+          <div>
+            <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Operations console</p>
+            <h1>Every ride, <span class="gradient-text">held in care.</span></h1>
+            <p>Watch the live city pulse, answer safety alerts, and keep the SheDrive community verified.</p>
+          </div>
+          <div class="page-head-meta admin-head-actions">
+            <span class="status-badge" id="admin-connection">Live safety desk</span>
+            <button type="button" class="icon-btn" id="admin-refresh" aria-label="Refresh dashboard" title="Refresh dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-live-strip" id="admin-live-strip" hidden>
+          <span class="admin-live-dot" aria-hidden="true"></span>
+          <strong id="admin-live-title">Safety desk is live.</strong>
+          <span id="admin-live-copy">New SOS alerts appear here instantly.</span>
+        </div>
+
+        <section class="admin-stat-grid" aria-label="City statistics">
+          <article class="glass-card admin-stat is-sos">
+            <span class="admin-stat-icon" aria-hidden="true">!</span>
+            <div>
+              <small>Open SOS</small>
+              <strong id="stat-sos">—</strong>
+              <span id="stat-sos-copy">Needs attention</span>
+            </div>
+          </article>
+          <article class="glass-card admin-stat">
+            <span class="admin-stat-icon" aria-hidden="true">↗</span>
+            <div>
+              <small>Active rides</small>
+              <strong id="stat-active-rides">—</strong>
+              <span id="stat-rides-copy">Moving now</span>
+            </div>
+          </article>
+          <article class="glass-card admin-stat">
+            <span class="admin-stat-icon" aria-hidden="true">◉</span>
+            <div>
+              <small>Drivers online</small>
+              <strong id="stat-online-drivers">—</strong>
+              <span id="stat-driver-copy">In the city</span>
+            </div>
+          </article>
+          <article class="glass-card admin-stat">
+            <span class="admin-stat-icon" aria-hidden="true">✓</span>
+            <div>
+              <small>Pending reviews</small>
+              <strong id="stat-pending-reviews">—</strong>
+              <span id="stat-review-copy">Identity queue</span>
+            </div>
+          </article>
+          <article class="glass-card admin-stat">
+            <span class="admin-stat-icon" aria-hidden="true">▤</span>
+            <div>
+              <small>Licence checks</small>
+              <strong id="stat-pending-docs">—</strong>
+              <span id="stat-doc-copy">Documents waiting</span>
+            </div>
+          </article>
+          <article class="glass-card admin-stat">
+            <span class="admin-stat-icon" aria-hidden="true">Rs</span>
+            <div>
+              <small>Paid fares</small>
+              <strong id="stat-revenue">—</strong>
+              <span id="stat-user-copy">— accounts</span>
+            </div>
+          </article>
+        </section>
+
+        <div class="admin-main-grid">
+          <section class="glass-card admin-analytics" aria-labelledby="analytics-title">
+            <div class="card-head">
+              <div>
+                <p class="card-eyebrow">3D city pulse</p>
+                <h2 id="analytics-title">The shape of tonight</h2>
+                <p>Live account and ride volume, extruded into the city grid.</p>
+              </div>
+              <span class="pill pill-soft" id="analytics-pill">Loading signal</span>
+            </div>
+            <div class="admin-canvas-wrap">
+              <canvas id="admin-analytics" aria-label="Three dimensional chart of SheDrive city operations"></canvas>
+              <div class="admin-canvas-grid" aria-hidden="true"></div>
+              <div class="admin-canvas-caption">
+                <span><i class="bar-riders"></i>Riders</span>
+                <span><i class="bar-drivers"></i>Drivers</span>
+                <span><i class="bar-rides"></i>Rides</span>
+                <span><i class="bar-completed"></i>Completed</span>
+                <span><i class="bar-revenue"></i>Revenue</span>
+              </div>
+            </div>
+            <div class="admin-analytics-foot">
+              <div><span>Completion rate</span><strong id="analytics-completion">—</strong></div>
+              <div><span>Moderated accounts</span><strong id="analytics-banned">—</strong></div>
+              <div><span>Total accounts</span><strong id="analytics-users">—</strong></div>
+            </div>
+          </section>
+
+          <section class="glass-card admin-sos-panel" id="sos" aria-labelledby="admin-sos-title">
+            <div class="card-head">
+              <div>
+                <p class="card-eyebrow">Safety desk</p>
+                <h2 id="admin-sos-title">SOS queue</h2>
+              </div>
+              <span class="status-badge is-warning" id="sos-count-badge">0 open</span>
+            </div>
+            <div class="segmented admin-sos-filter" role="group" aria-label="SOS status filter">
+              <button type="button" class="is-active" data-sos-filter="open">Open</button>
+              <button type="button" data-sos-filter="acknowledged">With desk</button>
+              <button type="button" data-sos-filter="resolved">Resolved</button>
+              <button type="button" data-sos-filter="all">All</button>
+            </div>
+            <div class="admin-sos-list" id="admin-sos-list" aria-live="polite">
+              <div class="admin-skeleton"></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="glass-card admin-users" aria-labelledby="admin-users-title">
+          <div class="card-head admin-users-head">
+            <div>
+              <p class="card-eyebrow">Community</p>
+              <h2 id="admin-users-title">Accounts &amp; access</h2>
+              <p>Search the city, review verification state, and suspend access with a clear reason.</p>
+            </div>
+            <a class="btn btn-ghost btn-sm" href="/admin-review.html">Open verification queue</a>
+          </div>
+
+          <form class="admin-user-toolbar" id="admin-user-filters">
+            <label class="admin-search">
+              <span class="sr-only">Search accounts</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+              <input type="search" id="admin-user-search" placeholder="Search name, email or phone" maxlength="120" />
+            </label>
+            <label>
+              <span class="sr-only">Filter by role</span>
+              <select id="admin-user-role">
+                <option value="all">All roles</option>
+                <option value="rider">Riders</option>
+                <option value="driver">Drivers</option>
+                <option value="admin">Admins</option>
+              </select>
+            </label>
+            <label>
+              <span class="sr-only">Filter by status</span>
+              <select id="admin-user-status">
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="banned">Suspended</option>
+                <option value="approved">Verified</option>
+                <option value="pending">Pending</option>
+                <option value="pending_review">Under review</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </label>
+            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+          </form>
+
+          <div class="admin-user-list" id="admin-user-list" aria-live="polite">
+            <div class="admin-skeleton"></div>
+          </div>
+          <div class="admin-pagination" id="admin-user-pagination" hidden>
+            <button type="button" class="text-btn" id="admin-users-prev">Previous</button>
+            <span id="admin-users-page">Page 1</span>
+            <button type="button" class="text-btn" id="admin-users-next">Next</button>
+          </div>
+        </section>
+
+        <section class="glass-card admin-recent" aria-labelledby="admin-recent-title">
+          <div class="card-head">
+            <div>
+              <p class="card-eyebrow">Recent movement</p>
+              <h2 id="admin-recent-title">Latest rides</h2>
+            </div>
+          </div>
+          <div class="admin-recent-list" id="admin-recent-list"></div>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal" id="admin-access-modal" hidden>
+      <div class="modal-backdrop" data-close-access></div>
+      <div class="modal-card glass-card" role="dialog" aria-modal="true" aria-labelledby="admin-access-title">
+        <button type="button" class="icon-btn modal-close" data-close-access aria-label="Close access dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
+        <p class="eyebrow" id="admin-access-eyebrow">Account access</p>
+        <h2 id="admin-access-title">Suspend account</h2>
+        <p id="admin-access-copy">This person will be signed out of ride actions immediately.</p>
+        <label class="field">
+          <span>Reason</span>
+          <textarea id="admin-access-reason" rows="3" maxlength="300" placeholder="Shared with the member and kept on the audit trail."></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-access>Cancel</button>
+          <button type="button" class="btn btn-danger" id="admin-access-confirm">Suspend account</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="sos-resolve-modal" hidden>
+      <div class="modal-backdrop" data-close-resolve></div>
+      <div class="modal-card glass-card" role="dialog" aria-modal="true" aria-labelledby="sos-resolve-title">
+        <button type="button" class="icon-btn modal-close" data-close-resolve aria-label="Close resolve dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
+        <p class="eyebrow">Safety desk</p>
+        <h2 id="sos-resolve-title">Resolve this SOS?</h2>
+        <p>Only resolve once the member is safe and has been contacted.</p>
+        <label class="field">
+          <span>Resolution note</span>
+          <textarea id="sos-resolve-note" rows="3" maxlength="500" placeholder="What happened, and how was the member supported?"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-resolve>Keep open</button>
+          <button type="button" class="btn btn-primary" id="sos-resolve-confirm">Mark resolved</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/admin.js"></script>
+  </body>
+</html>

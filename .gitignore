@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build output
+dist/
+build/
+coverage/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+k8s/secrets.yaml
+k8s/monitoring/grafana-admin-secret.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv*/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+nul
+.idea/
+.vscode/
+*.swp
+
+# Test uploads / temporary images (raw selfies must never persist)
+tmp/
+uploads/
+*.tmp
+backend/storage/

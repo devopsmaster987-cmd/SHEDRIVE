@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SheDrive ride history and wallet: revisit past trips, check fares, and manage your demo wallet."
+    />
+    <meta name="theme-color" content="#05030f" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2305030f'/%3E%3Cpath d='M24 6 39 15v18L24 42 9 33V15L24 6Z' fill='none' stroke='%234ff0ff' stroke-width='2'/%3E%3Cpath d='M29 19c-1.3-1.3-3-2-4.9-2-2.7 0-4.6 1.5-4.6 3.6 0 2 1.5 3 4.4 3.6 3 .7 4.8 2 4.8 4.3 0 2.5-2.2 4.2-5.2 4.2-2.3 0-4.4-.8-5.8-2.3' fill='none' stroke='%23ff2bd6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <title>History &amp; wallet - SheDrive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/design-system.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/phase7.css" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("shedrive:reduce-effects");
+          var osReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var reduce = stored === null ? osReduced : stored === "1";
+          if (reduce) document.documentElement.classList.add("reduce-effects");
+        } catch (e) {
+          /* Preferences are optional. */
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="app-page history-page">
+    <a class="skip-link" href="#app-content">Skip to content</a>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="app-nav">
+      <div class="app-nav-inner shell">
+        <a class="brand" id="app-brand" href="/" aria-label="SheDrive home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-text">She<span>Drive</span></span>
+        </a>
+
+        <nav class="app-nav-links" id="app-nav-links" aria-label="Primary"></nav>
+        <div class="app-actions" id="app-actions"></div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="app-loading" id="app-loading" role="status" aria-live="polite">
+        <div>
+          <span class="app-loading-mark" aria-hidden="true"></span>
+          <strong>Opening your journeys</strong>
+          <p>Loading ride history and wallet activity.</p>
+        </div>
+      </div>
+
+      <div class="app-error" id="app-error" hidden>
+        <div class="app-error-card glass-card">
+          <p class="eyebrow">History unavailable</p>
+          <h1 id="app-error-title">We could not open your history</h1>
+          <p id="app-error-message">Check your connection and try again.</p>
+          <a class="btn btn-primary" id="app-error-action" href="/">Back home</a>
+        </div>
+      </div>
+
+      <div id="app-content" hidden>
+        <div class="app-banner" id="app-banner" hidden></div>
+
+        <header class="page-head history-head">
+          <div>
+            <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Your journeys</p>
+            <h1>Trips that <span class="gradient-text">stay with you.</span></h1>
+            <p id="history-subtitle">Every ride, fare and wallet movement in one calm place.</p>
+          </div>
+          <div class="page-head-meta">
+            <a class="btn btn-primary btn-sm" id="history-book" href="/book.html">Book a ride</a>
+          </div>
+        </header>
+
+        <div class="tab-bar" role="tablist" aria-label="History sections">
+          <button type="button" class="tab-button is-active" id="tab-rides" role="tab" aria-selected="true" aria-controls="panel-rides">Ride history</button>
+          <button type="button" class="tab-button" id="tab-wallet" role="tab" aria-selected="false" aria-controls="panel-wallet">Wallet</button>
+        </div>
+
+        <section class="history-panel" id="panel-rides" role="tabpanel" aria-labelledby="tab-rides">
+          <div class="history-stat-grid">
+            <div class="glass-card history-stat">
+              <span>Total rides</span>
+              <strong id="history-count">—</strong>
+              <small>Across all statuses</small>
+            </div>
+            <div class="glass-card history-stat">
+              <span id="history-spend-label">Total spent</span>
+              <strong id="history-spend">—</strong>
+              <small>Completed rides only</small>
+            </div>
+            <div class="glass-card history-stat">
+              <span>Distance travelled</span>
+              <strong id="history-distance">—</strong>
+              <small>Completed journeys</small>
+            </div>
+          </div>
+
+          <div class="history-toolbar">
+            <div>
+              <p class="card-eyebrow">Timeline</p>
+              <h2>Your rides</h2>
+            </div>
+            <label class="history-filter">
+              <span class="sr-only">Filter rides by status</span>
+              <select id="history-filter">
+                <option value="all">All rides</option>
+                <option value="completed">Completed</option>
+                <option value="active">In progress</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="ride-history-list" id="history-list"></div>
+          <div class="empty-state glass-card" id="history-empty" hidden>
+            <span aria-hidden="true">✦</span>
+            <strong>No rides here yet</strong>
+            <p>When you book your first SheDrive journey, it will appear here.</p>
+            <a class="btn btn-primary btn-sm" href="/book.html">Book a ride</a>
+          </div>
+        </section>
+
+        <section class="history-panel" id="panel-wallet" role="tabpanel" aria-labelledby="tab-wallet" hidden>
+          <div class="wallet-grid">
+            <section class="glass-card wallet-card" aria-labelledby="wallet-title">
+              <div class="wallet-card-top">
+                <div>
+                  <p class="card-eyebrow">SheDrive wallet</p>
+                  <h2 id="wallet-title">Your balance</h2>
+                </div>
+                <span class="wallet-chip" aria-hidden="true">PKR</span>
+              </div>
+              <p class="wallet-balance" id="wallet-balance">—</p>
+              <p class="wallet-note">Demo money for this project. No real gateway is connected.</p>
+              <div class="wallet-glow" aria-hidden="true"></div>
+            </section>
+
+            <section class="glass-card topup-card" aria-labelledby="topup-title">
+              <div class="card-head">
+                <div>
+                  <p class="card-eyebrow">Top up</p>
+                  <h2 id="topup-title">Add to your wallet</h2>
+                  <p>Choose a quick amount or enter your own.</p>
+                </div>
+              </div>
+              <div class="topup-quick" id="topup-quick">
+                <button type="button" data-amount="100">Rs100</button>
+                <button type="button" data-amount="250">Rs250</button>
+                <button type="button" data-amount="500">Rs500</button>
+                <button type="button" data-amount="1000">Rs1,000</button>
+              </div>
+              <form class="app-form topup-form" id="topup-form">
+                <label class="app-field">
+                  <span>Custom amount (Rs100 – Rs10,000)</span>
+                  <input id="topup-amount" type="number" min="100" max="10000" step="50" inputmode="numeric" placeholder="Amount" required />
+                </label>
+                <button type="submit" class="btn btn-primary btn-block" id="topup-submit">Add money</button>
+              </form>
+            </section>
+          </div>
+
+          <div class="wallet-activity">
+            <div class="history-toolbar">
+              <div>
+                <p class="card-eyebrow">Ledger</p>
+                <h2>Wallet activity</h2>
+              </div>
+            </div>
+            <div class="transaction-list" id="transaction-list"></div>
+            <div class="empty-state glass-card" id="transactions-empty" hidden>
+              <span aria-hidden="true">✦</span>
+              <strong>No wallet activity yet</strong>
+              <p>Top up your wallet to see transactions here.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/js/history.js"></script>
+  </body>
+</html>

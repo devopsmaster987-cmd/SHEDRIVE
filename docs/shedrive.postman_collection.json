@@ -1,0 +1,827 @@
+{
+  "info": {
+    "_postman_id": "5b0f4a1c-2f6e-4d7a-9b3c-1a2b3c4d5e6f",
+    "name": "SheDrive API",
+    "description": "Main SheDrive REST flows. Start the stack with docker compose, login, then run the folders in order. Tokens and ride ids are captured automatically into collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "riderToken", "value": "" },
+    { "key": "driverToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "rideId", "value": "" },
+    { "key": "offerId", "value": "" },
+    { "key": "riderEmail", "value": "rider@shedrive.test" },
+    { "key": "riderPassword", "value": "Rider@12345" },
+    { "key": "driverEmail", "value": "driver@shedrive.test" },
+    { "key": "driverPassword", "value": "Driver@12345" },
+    { "key": "adminEmail", "value": "admin@shedrive.test" },
+    { "key": "adminPassword", "value": "Admin@12345" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "ready"]
+            }
+          }
+        },
+        {
+          "name": "API info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api", "host": ["{{baseUrl}}"], "path": ["api"] }
+          }
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup rider (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "New Rider", "type": "text" },
+                { "key": "email", "value": "new.rider@example.com", "type": "text" },
+                { "key": "phone", "value": "+919800000001", "type": "text" },
+                { "key": "password", "value": "Example123", "type": "text" },
+                { "key": "role", "value": "rider", "type": "text" },
+                { "key": "selfie", "type": "file", "src": "selfie.jpg" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signup"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 created', () => pm.response.to.have.status(201));",
+                  "pm.test('OTP required', () => pm.expect(pm.response.json().data.phoneVerificationRequired).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.rider@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-otp"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('token', body.data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.rider@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "resend-otp"]
+            }
+          }
+        },
+        {
+          "name": "Login rider",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{riderEmail}}\",\n  \"password\": \"{{riderPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('token', body.data.token);",
+                  "pm.collectionVariables.set('riderToken', body.data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login driver",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{driverEmail}}\",\n  \"password\": \"{{driverPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('driverToken', body.data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('adminToken', body.data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get profile",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update profile and contacts",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aisha Khan\",\n  \"emergencyContacts\": [\n    { \"name\": \"Mariam Khan\", \"phone\": \"+919876543211\", \"relationship\": \"Sister\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Drivers",
+      "item": [
+        {
+          "name": "Nearby drivers (rider)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/nearby?lat=19.076&lng=72.8777&radiusKm=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "nearby"],
+              "query": [
+                { "key": "lat", "value": "19.076" },
+                { "key": "lng", "value": "72.8777" },
+                { "key": "radiusKm", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Driver dashboard",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "me"]
+            }
+          }
+        },
+        {
+          "name": "Driver earnings",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/me/earnings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "me", "earnings"]
+            }
+          }
+        },
+        {
+          "name": "Go online (driver)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isOnline\": true\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/me/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "me", "status"]
+            }
+          }
+        },
+        {
+          "name": "Update driver location",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"lat\": 19.076,\n  \"lng\": 72.8777\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers/me/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drivers", "me", "location"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rides and offers",
+      "item": [
+        {
+          "name": "Estimate fare (rider)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup\": { \"lat\": 19.076, \"lng\": 72.8777, \"label\": \"Bandra Station\" },\n  \"drop\": { \"lat\": 19.1197, \"lng\": 72.8464, \"label\": \"Andheri West\" },\n  \"vehicleType\": \"Car\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/estimate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "estimate"]
+            }
+          }
+        },
+        {
+          "name": "Create ride (rider)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup\": { \"lat\": 19.076, \"lng\": 72.8777, \"label\": \"Bandra Station\" },\n  \"drop\": { \"lat\": 19.1197, \"lng\": 72.8464, \"label\": \"Andheri West\" },\n  \"vehicleType\": \"Car\",\n  \"offeredPrice\": 85\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('rideId', body.data.ride.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Active ride",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "active"]
+            }
+          }
+        },
+        {
+          "name": "Driver opportunities",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/opportunities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "opportunities"]
+            }
+          }
+        },
+        {
+          "name": "Send offer (driver)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"offerPrice\": 95,\n  \"note\": \"Two minutes away\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/offers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "offers"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('offerId', body.data.offer.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List offers (rider)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/offers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "offers"]
+            }
+          }
+        },
+        {
+          "name": "Accept offer (rider)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/offers/{{offerId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "offers", "{{offerId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Driver arriving",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"arriving\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Driver starts trip",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"in_progress\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Driver completes trip",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driverToken}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"completed\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Cancel ride (participant)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Changed plans\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/rides/{{rideId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides", "{{rideId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Ride history",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rides?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rides"],
+              "query": [{ "key": "limit", "value": "20" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Wallet (rider)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "wallet"]
+            }
+          }
+        },
+        {
+          "name": "Top up wallet",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 500\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/wallet/topup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "wallet", "topup"]
+            }
+          }
+        },
+        {
+          "name": "Ride payment state",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/rides/{{rideId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "rides", "{{rideId}}"]
+            }
+          }
+        },
+        {
+          "name": "Pay ride (wallet)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"method\": \"wallet\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/rides/{{rideId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "rides", "{{rideId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ratings",
+      "item": [
+        {
+          "name": "Rating state",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/rides/{{rideId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ratings", "rides", "{{rideId}}"]
+            }
+          }
+        },
+        {
+          "name": "Rate driver",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stars\": 5,\n  \"comment\": \"Safe and punctual\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ratings/rides/{{rideId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ratings", "rides", "{{rideId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SOS",
+      "item": [
+        {
+          "name": "My open alert",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sos/alerts/mine",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sos", "alerts", "mine"]
+            }
+          }
+        },
+        {
+          "name": "Raise SOS",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{riderToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rideId\": \"{{rideId}}\",\n  \"lat\": 19.076,\n  \"lng\": 72.8777,\n  \"message\": \"Need help\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sos/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sos", "alerts"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List notifications",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"],
+              "query": [{ "key": "limit", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Mark all read",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Stats",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "stats"]
+            }
+          }
+        },
+        {
+          "name": "List users",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users?role=all&status=all&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                { "key": "role", "value": "all" },
+                { "key": "status", "value": "all" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Review queue",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/review-queue?status=pending&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "review-queue"],
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Driver documents",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/driver-documents?status=pending&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "driver-documents"],
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "SOS alerts",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sos-alerts?status=open&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "sos-alerts"],
+              "query": [
+                { "key": "status", "value": "open" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

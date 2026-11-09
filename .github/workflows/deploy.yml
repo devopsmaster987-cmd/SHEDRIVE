@@ -1,0 +1,114 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+  FRONTEND_BUCKET: ${{ secrets.FRONTEND_BUCKET }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+
+jobs:
+  deploy-backend:
+    name: Build images and roll out EKS
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: shedrive-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/shedrive/backend:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/shedrive/backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build and push face service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./face-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/shedrive/face-service:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/shedrive/face-service:latest
+          cache-from: type=gha,scope=face-service
+          cache-to: type=gha,mode=max,scope=face-service
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name "$EKS_CLUSTER_NAME" \
+            --region "$AWS_REGION"
+
+      - name: Roll out commit images
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          kubectl set image deployment/shedrive-backend \
+            backend="$REGISTRY/shedrive/backend:${GITHUB_SHA}" -n shedrive
+          kubectl set image deployment/shedrive-face \
+            face-service="$REGISTRY/shedrive/face-service:${GITHUB_SHA}" -n shedrive
+          kubectl rollout status deployment/shedrive-backend -n shedrive --timeout=10m
+          kubectl rollout status deployment/shedrive-face -n shedrive --timeout=15m
+
+  deploy-frontend:
+    name: Sync frontend to S3 and invalidate CloudFront
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: shedrive-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload static build
+        run: aws s3 sync dist/ "s3://$FRONTEND_BUCKET/" --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --paths "/*"

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SheDrive admin verification queue: review selfies, driver licences and safety documents."
+    />
+    <meta name="theme-color" content="#05030f" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2305030f'/%3E%3Cpath d='M24 6 39 15v18L24 42 9 33V15L24 6Z' fill='none' stroke='%234ff0ff' stroke-width='2'/%3E%3Cpath d='M29 19c-1.3-1.3-3-2-4.9-2-2.7 0-4.6 1.5-4.6 3.6 0 2 1.5 3 4.4 3.6 3 .7 4.8 2 4.8 4.3 0 2.5-2.2 4.2-5.2 4.2-2.3 0-4.4-.8-5.8-2.3' fill='none' stroke='%23ff2bd6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <title>Verification queue - SheDrive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/design-system.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/phase7.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("shedrive:reduce-effects");
+          var osReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var reduce = stored === null ? osReduced : stored === "1";
+          if (reduce) document.documentElement.classList.add("reduce-effects");
+        } catch (e) {
+          /* Preferences are optional. */
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="app-page admin-page admin-review-page">
+    <a class="skip-link" href="#app-content">Skip to content</a>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="app-nav">
+      <div class="app-nav-inner shell">
+        <a class="brand" id="app-brand" href="/" aria-label="SheDrive home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-text">She<span>Drive</span></span>
+        </a>
+
+        <nav class="app-nav-links" id="app-nav-links" aria-label="Primary"></nav>
+        <div class="app-actions" id="app-actions"></div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="app-loading" id="app-loading" role="status" aria-live="polite">
+        <div>
+          <span class="app-loading-mark" aria-hidden="true"></span>
+          <strong>Opening the verification desk</strong>
+          <p>Loading identity reviews and driver documents.</p>
+        </div>
+      </div>
+
+      <div class="app-error" id="app-error" hidden>
+        <div class="app-error-card glass-card">
+          <p class="eyebrow">Queue unavailable</p>
+          <h1 id="app-error-title">We could not open verification</h1>
+          <p id="app-error-message">Check that the SheDrive API is running, then try again.</p>
+          <a class="btn btn-primary" id="app-error-action" href="/admin.html">Back to overview</a>
+        </div>
+      </div>
+
+      <div id="app-content" hidden>
+        <div class="app-banner" id="app-banner" hidden></div>
+
+        <header class="page-head admin-head">
+          <div>
+            <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Trust &amp; safety</p>
+            <h1>Open the door <span class="gradient-text">with care.</span></h1>
+            <p>Review identity signals, inspect driving licences and leave a clear note for every decision.</p>
+          </div>
+          <div class="page-head-meta">
+            <a class="btn btn-ghost btn-sm" href="/admin.html#sos">Safety desk</a>
+            <button type="button" class="icon-btn" id="review-refresh" aria-label="Refresh queues" title="Refresh queues">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="review-stat-grid" aria-label="Verification totals">
+          <article class="glass-card review-stat">
+            <span>Identity queue</span>
+            <strong id="review-stat-pending">—</strong>
+            <small>Awaiting a person</small>
+          </article>
+          <article class="glass-card review-stat">
+            <span>Licence queue</span>
+            <strong id="review-stat-docs">—</strong>
+            <small>Documents pending</small>
+          </article>
+          <article class="glass-card review-stat">
+            <span>Approved accounts</span>
+            <strong id="review-stat-approved">—</strong>
+            <small>Across both queues</small>
+          </article>
+          <article class="glass-card review-stat">
+            <span>Decisions made</span>
+            <strong id="review-stat-decided">—</strong>
+            <small>Approved or declined</small>
+          </article>
+        </section>
+
+        <div class="tab-bar review-tabs" role="tablist" aria-label="Verification queues">
+          <button type="button" class="tab-button is-active" id="tab-identities" role="tab" aria-selected="true" aria-controls="panel-identities">Identity reviews</button>
+          <button type="button" class="tab-button" id="tab-licences" role="tab" aria-selected="false" aria-controls="panel-licences">Driving licences</button>
+        </div>
+
+        <section class="review-panel" id="panel-identities" role="tabpanel" aria-labelledby="tab-identities">
+          <div class="review-filter-bar">
+            <div>
+              <p class="card-eyebrow">Identity</p>
+              <h2>Selfie &amp; face checks</h2>
+            </div>
+            <div class="segmented" role="group" aria-label="Identity review status">
+              <button type="button" class="is-active" data-review-filter="pending">Pending</button>
+              <button type="button" data-review-filter="approved">Approved</button>
+              <button type="button" data-review-filter="rejected">Rejected</button>
+              <button type="button" data-review-filter="all">All</button>
+            </div>
+          </div>
+          <div class="review-list" id="review-list" aria-live="polite">
+            <div class="admin-skeleton"></div>
+          </div>
+        </section>
+
+        <section class="review-panel" id="panel-licences" role="tabpanel" aria-labelledby="tab-licences" hidden>
+          <div class="review-filter-bar">
+            <div>
+              <p class="card-eyebrow">Documents</p>
+              <h2>Driving licences</h2>
+            </div>
+            <div class="segmented" role="group" aria-label="Licence review status">
+              <button type="button" class="is-active" data-doc-filter="pending">Pending</button>
+              <button type="button" data-doc-filter="approved">Approved</button>
+              <button type="button" data-doc-filter="rejected">Rejected</button>
+              <button type="button" data-doc-filter="all">All</button>
+            </div>
+          </div>
+          <div class="doc-list" id="doc-list" aria-live="polite">
+            <div class="admin-skeleton"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal" id="review-action-modal" hidden>
+      <div class="modal-backdrop" data-close-review></div>
+      <div class="modal-card glass-card" role="dialog" aria-modal="true" aria-labelledby="review-action-title">
+        <button type="button" class="icon-btn modal-close" data-close-review aria-label="Close review dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
+        <p class="eyebrow" id="review-action-eyebrow">Verification decision</p>
+        <h2 id="review-action-title">Approve account</h2>
+        <p id="review-action-copy">This decision is shared with the member and stored in the audit trail.</p>
+        <label class="field">
+          <span>Reviewer note</span>
+          <textarea id="review-action-note" rows="3" maxlength="500" placeholder="Optional context for the member and the audit trail."></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-review>Cancel</button>
+          <button type="button" class="btn btn-primary" id="review-action-confirm">Approve</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/admin-review.js"></script>
+  </body>
+</html>

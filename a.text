@@ -1,0 +1,265 @@
+# OpenCode Master Prompt: SheDrive
+
+Paste this whole file into OpenCode as the first message. Work phase by phase and stop for my approval at the end of each phase.
+
+---
+
+## 0. Role and working rules
+
+You are a senior full-stack and DevOps engineer building **SheDrive**, my final-year project: a women-only ride-hailing web platform with face-based gender verification at signup, inspired by inDrive's fare-negotiation model.
+
+Working rules:
+1. Build in the phases below, in order. At the end of each phase, run the tests, summarize what was done, list any deviations, and **wait for my "continue"** before starting the next phase.
+2. Before writing code in a phase, post a short plan (files to create, decisions made). Do not ask questions that have a sensible default; pick the default and note it.
+3. Never commit secrets. Use `.env.example` files with placeholders and read config from environment variables.
+4. Keep the code readable and commented at a student-project level: clear names, small modules, no clever abstractions.
+5. Every service must have a Dockerfile, a `/health` endpoint, and a short README section.
+6. Use free/open-source tools wherever possible.
+7. When a command needs my cloud credentials (AWS, Twilio, Firebase), do not run it. Print the exact command and tell me what to do.
+8. Write tests for the backend routes and the face service as you go, not at the end.
+
+## 1. Product summary
+
+- Women-only ride-hailing: riders and drivers are both women.
+- At signup, a selfie is captured and sent to a Python face-verification microservice that returns a gender prediction with a confidence score.
+- Confidence >= 0.85 and predicted female: auto-approve. Otherwise: status `pending_review` and an entry in the admin review queue (ID document fallback).
+- The model is a first-pass filter only. Automated gender classification is not 100% accurate, and the manual admin review fallback is a deliberate design decision. Reflect this in code comments, the README, and the UI copy (for example "Your account is under review" rather than "Rejected").
+- Privacy by design: **raw selfies are never stored long-term**. Process in memory, store only the numeric face embedding and the verification result, then discard the image.
+- Fare negotiation: rider proposes a price, drivers accept or counter-offer, rider picks.
+- Safety features: live trip tracking, SOS button, emergency contacts.
+
+## 2. Tech stack (fixed)
+
+| Area | Choice |
+|---|---|
+| Frontend | HTML5, CSS3, JavaScript (ES modules) built with **Vite** (output `dist/` is what gets synced to S3), Tailwind CSS, **Three.js** (3D scenes), **GSAP + ScrollTrigger** (animation), **Lenis** (smooth scroll), GLSL shaders, Leaflet.js + OpenStreetMap (or MapLibre GL for the 3D tilted map) |
+| Backend | Node.js 20, Express.js, Socket.IO, Mongoose |
+| Face service | Python 3.10+, FastAPI, DeepFace, OpenCV |
+| Database | MongoDB (MongoDB Atlas in production, local container in dev) |
+| Auth | JWT (access token), bcrypt for password hashing |
+| OTP | Provider-agnostic interface with a **mock provider** that logs the OTP in dev; Twilio/Fast2SMS adapter stubbed behind env flag |
+| Containers | Docker, Docker Compose |
+| Orchestration | Kubernetes on AWS EKS (eksctl, kubectl, Helm) |
+| Registry | Amazon ECR |
+| Frontend hosting | S3 + CloudFront |
+| CI/CD | GitHub Actions |
+| Monitoring | Prometheus + Grafana, `prom-client` (Node), `prometheus-fastapi-instrumentator` (Python) |
+| Testing | Jest + Supertest (backend), pytest (face service), Postman collection export |
+
+## 3. Repository layout
+
+```
+shedrive/
+├── frontend/
+│   ├── index.html                # Page 1: Landing/Login/Signup
+│   ├── pages/                    # Pages 2-10 (see section 6)
+│   ├── js/                       # api.js, auth.js, map.js, socket.js, per-page scripts
+│   ├── css/
+│   └── Dockerfile                # nginx static image (for Compose); prod uses S3
+├── backend/
+│   ├── src/
+│   │   ├── config/               # env, db connection
+│   │   ├── models/               # Mongoose schemas
+│   │   ├── routes/               # auth, rides, offers, drivers, payments, ratings, sos, admin, notifications
+│   │   ├── controllers/
+│   │   ├── middleware/           # auth (JWT), role guard, error handler, rate limiter, validation
+│   │   ├── services/             # faceClient, otp, fare, matching
+│   │   ├── sockets/              # Socket.IO handlers
+│   │   ├── metrics.js            # prom-client
+│   │   └── server.js
+│   ├── tests/
+│   ├── Dockerfile
+│   └── .env.example
+├── face-service/
+│   ├── app/main.py               # FastAPI app
+│   ├── app/verify.py             # DeepFace logic
+│   ├── tests/
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .env.example
+├── k8s/
+│   ├── namespace.yaml
+│   ├── backend.yaml              # Deployment + Service
+│   ├── face-service.yaml         # Deployment + ClusterIP Service
+│   ├── configmap.yaml
+│   ├── secrets.example.yaml
+│   └── monitoring/               # Helm values, ServiceMonitor or scrape annotations
+├── .github/workflows/
+│   ├── ci.yml                    # lint + test on every PR
+│   └── deploy.yml                # build, push to ECR, deploy to EKS on push to main
+├── docs/                         # architecture.md, er-diagram, api.md, viva-notes.md
+├── docker-compose.yml
+├── .gitignore
+└── README.md
+```
+
+## 4. Face verification service (build first, it is the riskiest part)
+
+**Endpoints**
+- `POST /verify` accepts multipart image (`selfie`, max 5 MB, JPEG/PNG only). Returns:
+  ```json
+  { "face_detected": true, "gender": "female", "confidence": 0.92,
+    "decision": "auto_approved | needs_review | no_face",
+    "embedding": [ ...floats... ] }
+  ```
+- `GET /health`
+- `GET /metrics` (Prometheus)
+
+**Logic**
+- Use `DeepFace.analyze(img, actions=["gender"], enforce_detection=True)` for gender and confidence. Normalize the confidence to 0-1.
+- Use `DeepFace.represent(...)` (for example Facenet) for the embedding.
+- Decision rules, with thresholds configurable via env (`CONF_THRESHOLD=0.85`):
+  - no face or multiple faces: `no_face`, ask the user to retake
+  - predicted female and confidence >= threshold: `auto_approved`
+  - anything else: `needs_review`
+- Process the image **in memory only**. Do not write it to disk or log its contents.
+- Validate file type and size, return clear 4xx errors, and set a timeout.
+- Preload the model at startup so the first request is not slow.
+- pytest tests with a few sample images and mocked DeepFace for fast unit tests.
+
+## 5. Backend (Node.js + Express)
+
+**Conventions**: REST under `/api`, JSON responses `{ success, data, error }`, central error handler, request validation (Joi or express-validator), `helmet`, `cors` with an allowed-origin env var, `express-rate-limit` on auth routes.
+
+**Models (Mongoose)** (fields from my design doc):
+- `User`: name, email, phone, passwordHash, role (`rider|driver|admin`), faceEmbedding, verificationStatus (`pending|approved|pending_review|rejected`), phoneVerified, emergencyContacts[], createdAt
+- `DriverDetails`: user, vehicleType, plateNumber, licenseDocUrl, ratingAvg, isOnline, currentLocation (GeoJSON Point with 2dsphere index)
+- `Ride`: rider, driver, pickup, drop (GeoJSON), distanceKm, offeredPrice, finalPrice, status (`searching|accepted|arriving|in_progress|completed|cancelled`), timestamps
+- `RideOffer`: ride, driver, offerPrice, status (`pending|accepted|rejected|countered|expired`)
+- `Payment`: ride, amount, method (`cash|wallet`), status
+- `Rating`: ride, ratedBy, ratedUser, stars (1-5), comment
+- `SOSAlert`: ride, user, location, timestamp, status (`open|acknowledged|resolved`)
+- `AdminReviewQueue`: user, faceConfidenceScore, submittedDocs[], status, reviewedBy, reviewedAt, note
+- `Notification`: user, message, readStatus
+- `WalletTransaction` (simple wallet ledger)
+
+**Key flows and endpoints**
+- Auth: `POST /api/auth/signup` (multipart: fields + selfie, plus license doc for drivers), `POST /api/auth/verify-otp`, `POST /api/auth/login`, `GET /api/auth/me`.
+  - Signup calls the face service (`faceClient`), applies the decision, sets `verificationStatus`, creates an `AdminReviewQueue` entry when needed, discards the selfie, and stores only the embedding.
+  - Users with status `pending_review` or `rejected` cannot book or accept rides (enforce in middleware).
+  - If the face service is down, fail safe: put the user in `pending_review`, never auto-approve.
+- Rides: create ride request with offered price, list nearby drivers (Mongo `$near`), cancel, complete, history.
+- Offers: drivers accept or counter-offer, rider accepts one offer, expire stale offers.
+- Drivers: toggle online/offline, update location, earnings summary.
+- Payments and wallet: mock wallet top-up and ride payment (no real gateway).
+- Ratings: both sides rate after a completed ride; recompute driver `ratingAvg`.
+- SOS: create alert (notifies emergency contacts via the notification service mock and flags admin), list for admin.
+- Admin: stats, user/driver list, ban/suspend, review queue (approve/reject with note), driver document review, SOS list.
+- Seed script: creates an admin user, sample riders and drivers.
+
+**Socket.IO events** (JWT-authenticated handshake, rooms per ride)
+- `driver:location` (driver to server, throttled), `ride:request` (server to nearby drivers), `offer:new`, `offer:accepted`, `ride:status`, `ride:location` (live position to rider), `sos:triggered` (to admin room).
+
+**Metrics**: `prom-client` default metrics plus an HTTP request duration histogram, request counter, and gauges for active socket connections and online drivers, all exposed at `/metrics`.
+
+## 6. Frontend: 10 pages
+
+**This must be a full 3D website with a shocking, mind-blowing look that makes viewers stop and stare.** Treat the visual experience as a first-class requirement, equal in importance to the functionality. Follow the design direction in section 6A on every page. Use shared `api.js` (fetch wrapper with token handling) and `socket.js`.
+
+### 6A. 3D and visual design direction
+
+**Concept: "Neon Midnight City."** A glowing, cinematic, futuristic night-city world that feels safe, powerful, and feminine without being cliché. The visitor is flying through a living 3D city at night where every route is lit up.
+
+**Look and feel**
+- Dark immersive base (deep midnight indigo/black) with a vivid gradient accent palette: electric magenta, hot pink, violet, and cyan glow. Define all colors, spacing, radii, and shadows as CSS variables in one design-system file.
+- Glassmorphism panels (blurred translucent cards with thin glowing borders), soft neon bloom, grain overlay, and subtle chromatic aberration on hero transitions.
+- Typography: bold oversized display font (for example Space Grotesk, Clash Display, or Syne) paired with a clean body font (Inter). Huge kinetic headlines with split-text letter and word reveals.
+- Custom magnetic cursor with a glowing trail on desktop; tactile hover states and micro-interactions on every button and card.
+- Animated gradient mesh and floating particle backgrounds on non-3D sections.
+
+**3D requirements (Three.js)**
+1. **Landing hero**: a full-screen 3D night city built procedurally (instanced buildings with emissive window lights, fog, bloom post-processing via `EffectComposer` + `UnrealBloomPass`) with a stylized glowing car driving along neon road lines. The camera moves with scroll (GSAP ScrollTrigger scrubs a camera path) and reacts to mouse parallax.
+2. **Signup face-capture step**: a futuristic 3D scanning effect around the live camera feed (rotating holographic rings, scan-line shader sweeping across the face frame, particle burst on success, a distinct but kind animation for "under review"). It must never look like rejection.
+3. **Book a Ride**: a tilted, pitched 3D map (MapLibre GL with extruded 3D buildings, or a Three.js city layer synced to coordinates) with glowing animated route lines, pulsing pickup and drop pins, and nearby drivers shown as moving glowing 3D car markers.
+4. **Searching for driver**: radar-pulse shader with orbiting particles; offers fly in as 3D floating cards with spring physics.
+5. **Live tracking**: the car model moves smoothly along the route with interpolated Socket.IO positions, a light trail behind it, and a camera that can follow it. SOS button is a pulsing glowing 3D orb that expands into a full-screen red alert shader when triggered (with a confirm step to prevent accidents).
+6. **Ride summary and rating**: a celebratory scene with confetti or particle fireworks, and stars as 3D objects that light up one by one.
+7. **Dashboards (driver and admin)**: 3D-styled analytics: animated counters, 3D bar/globe or glowing line charts (Three.js or Chart.js with custom styling), a rotating globe or city map showing live online drivers and SOS alerts.
+8. **Every page transition**: cinematic transitions (a shader wipe or a camera fly-through), never a plain page reload feel. Add a branded animated 3D loader and a preloader that shows asset progress.
+
+**3D asset rules**
+- Prefer **procedural geometry and shaders** so there are no heavy asset downloads. If a glTF car model is used, keep it under about 1.5 MB, compress with Draco or meshopt, and load lazily.
+- Use instancing for buildings and particles. Cap pixel ratio at 2. Dispose of geometries, materials, and textures when leaving a page.
+- Target 60 fps on a mid-range laptop and a smooth 30+ fps on mid-range phones.
+
+**Performance, accessibility, and fallbacks (required, not optional)**
+- Detect WebGL support and low-power devices; fall back to a lighter static-gradient or 2D version with the same layout. Provide a "Reduce effects" toggle in settings.
+- Respect `prefers-reduced-motion` (disable parallax, camera moves, and large animations).
+- Text must keep WCAG AA contrast on glass panels. All forms, buttons, and the SOS control must be fully usable by keyboard and screen readers; the 3D canvas is decorative and gets `aria-hidden`.
+- Core functions (login, booking, SOS) must work even if 3D fails to load.
+- Code-split per page (dynamic imports), lazy-load Three.js only on pages that need it, and compress textures. Aim for Lighthouse Performance 80+ on desktop.
+- Mobile-first layouts: the 3D scenes must adapt to portrait screens, with touch controls instead of mouse parallax.
+
+**Deliverable for the design system**: a `frontend/js/three/` folder with reusable modules (`scene.js`, `city.js`, `car.js`, `postprocessing.js`, `shaders/`), a `frontend/css/design-system.css`, and a `docs/design-notes.md` describing the concept, palette, and performance choices.
+
+1. **Landing / Login / Signup**: tabs (Login, Rider Signup, Driver Signup), webcam selfie capture step (`getUserMedia`, preview and retake), OTP modal, clear messaging for `pending_review`.
+2. **Home / Book a Ride**: Leaflet map, pickup and drop pins, distance and suggested fare, editable offer price.
+3. **Ride Matching & Tracking**: searching animation, incoming driver offers list, live tracking map, SOS button.
+4. **Ride Summary & Rating**: fare breakdown, star rating, comment.
+5. **Ride History & Wallet**: tabs.
+6. **Profile & Settings**: user info, emergency contacts, support/FAQ.
+7. **Driver Dashboard**: online/offline toggle, incoming requests with accept/counter-offer, earnings.
+8. **Driver Active Ride**: navigation view, status buttons, complete ride.
+9. **Admin Dashboard**: stats, user/driver management (ban/suspend).
+10. **Admin Verification Queue**: tabs for flagged face reviews, driver docs, SOS alerts.
+
+Route guards by role. Show friendly error and loading states everywhere.
+
+## 7. Docker and local development
+
+- Multi-stage, slim Dockerfiles, non-root user where possible, `.dockerignore` files.
+- `docker-compose.yml` runs frontend (nginx), backend, face-service, and mongo with healthchecks and a shared network. One command (`docker compose up --build`) must bring the whole app up.
+- The face-service image should pre-download model weights at build time so pods start fast.
+
+## 8. Kubernetes and AWS (EKS)
+
+- Provide manifests as in my design: Deployment (2 replicas) and Service for backend (`LoadBalancer`) and face-service (`ClusterIP`, internal only), ConfigMap, Secret template, resource requests and limits, readiness and liveness probes on `/health`.
+- Face-service is memory-hungry: set realistic limits and note that `t3.small` may be too small; recommend `t3.medium` if pods are OOMKilled.
+- Provide a `docs/aws-setup.md` with exact commands for: billing alarm, ECR repos, `eksctl create cluster` (region `ap-south-1`, 2 nodes, managed), `kubectl apply`, cleanup (`eksctl delete cluster`). Include a **cost warning**: EKS control plane is about $0.10/hr, so delete the cluster after the demo.
+- Prefer GitHub OIDC role assumption in the deploy workflow; if keeping access keys, document the required secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`).
+
+## 9. CI/CD (GitHub Actions)
+
+- `ci.yml`: on PR and push to dev: install, lint, run backend Jest tests and face-service pytest.
+- `deploy.yml`: on push to `main`: configure AWS credentials, log in to ECR, build and push both images (tag with the commit SHA as well as `latest`), update kubeconfig, `kubectl set image` for both deployments, `kubectl rollout status`, and a frontend job doing `aws s3 sync` then CloudFront invalidation.
+- Use Docker layer caching.
+
+## 10. Monitoring
+
+- Helm commands and values files for Prometheus and Grafana in namespace `monitoring`.
+- Scrape config for backend and face-service `/metrics`.
+- A provisioned Grafana dashboard JSON with panels: request rate, p95 latency, error rate, active sockets, online drivers, face verifications by decision (auto/review/no-face), pod CPU and memory.
+- Document `kubectl port-forward svc/grafana 3000:80 -n monitoring`.
+
+## 11. Security checklist (verify at the end)
+
+- Passwords hashed with bcrypt, JWT expiry set, secrets only via env.
+- Input validation on all routes, rate limiting on auth and OTP routes, file upload type and size limits.
+- Role-based access control on every admin and driver route.
+- No raw selfies stored or logged; embeddings only.
+- CORS restricted, `helmet` enabled, MongoDB injection protections (sanitize inputs).
+- Dependencies audited (`npm audit`, `pip-audit`).
+
+## 12. Phases (stop and wait after each)
+
+1. **Scaffold and design system**: repo layout, git config, Docker Compose skeleton, health endpoints, README skeleton, Vite setup, `design-system.css`, shared Three.js scene boilerplate, and the **landing-page 3D night-city hero** as a working visual proof of the design direction. Stop here so I can approve the look before the rest is built.
+2. **Face service**: implement, test, containerize.
+3. **Auth and signup**: backend models, signup with face verification, OTP mock, login, JWT, admin review queue; signup and login page with selfie capture.
+4. **Rider and driver core**: pages 2, 6, 7, Leaflet maps, driver online toggle and location.
+5. **Ride flow and realtime**: ride request, offers, accept, Socket.IO live tracking, pages 3 and 8.
+6. **Payments, ratings, history**: pages 4 and 5.
+7. **Admin and safety**: pages 9 and 10, SOS flow, notifications.
+8. **Containerization and Kubernetes**: finalize Dockerfiles, k8s manifests, `docs/aws-setup.md`.
+9. **CI/CD and monitoring**: workflows, Helm values, Grafana dashboard.
+10. **Hardening and docs**: tests pass, security checklist, `docs/` (architecture diagram in Mermaid, ER diagram, API reference, viva notes covering the accuracy limitation and manual-review fallback, privacy-by-design, and use of an existing open-source model rather than training one).
+
+## 13. Definition of done
+
+- `docker compose up --build` runs the full app locally with seeded data.
+- Every one of the 10 pages follows the Neon Midnight City 3D design direction (section 6A), with working fallbacks for low-power devices and reduced motion.
+- A new rider can sign up with a selfie, get auto-approved or sent to the review queue, book a ride with a custom offer, receive a driver offer, see live tracking, trigger SOS, pay, and rate.
+- An admin can review flagged users and handle SOS alerts.
+- All tests pass in CI; pushing to `main` deploys to EKS; Grafana shows live metrics.
+- README explains setup, architecture, and limitations in plain language.
+
+Start with Phase 1. First post your plan for it, then implement.

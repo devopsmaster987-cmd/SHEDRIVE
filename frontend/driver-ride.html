@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SheDrive active ride: follow the route, update your trip status and share live location safely."
+    />
+    <meta name="theme-color" content="#05030f" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2305030f'/%3E%3Cpath d='M24 6 39 15v18L24 42 9 33V15L24 6Z' fill='none' stroke='%234ff0ff' stroke-width='2'/%3E%3Cpath d='M29 19c-1.3-1.3-3-2-4.9-2-2.7 0-4.6 1.5-4.6 3.6 0 2 1.5 3 4.4 3.6 3 .7 4.8 2 4.8 4.3 0 2.5-2.2 4.2-5.2 4.2-2.3 0-4.4-.8-5.8-2.3' fill='none' stroke='%23ff2bd6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <title>Active ride - SheDrive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/design-system.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/phase7.css" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("shedrive:reduce-effects");
+          var osReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var reduce = stored === null ? osReduced : stored === "1";
+          if (reduce) document.documentElement.classList.add("reduce-effects");
+        } catch (e) {
+          /* Preferences are optional. */
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="app-page">
+    <a class="skip-link" href="#app-content">Skip to content</a>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="app-nav">
+      <div class="app-nav-inner shell">
+        <a class="brand" id="app-brand" href="/" aria-label="SheDrive home">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <path d="M24 4 41 14v20L24 44 7 34V14L24 4Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M30 18c-1.6-1.6-3.7-2.4-6-2.4-3.3 0-5.6 1.8-5.6 4.4 0 2.4 1.8 3.6 5.3 4.4 3.7.9 5.8 2.4 5.8 5.2 0 3-2.6 5.1-6.3 5.1-2.8 0-5.3-1-7-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-text">She<span>Drive</span></span>
+        </a>
+
+        <nav class="app-nav-links" id="app-nav-links" aria-label="Primary"></nav>
+        <div class="app-actions" id="app-actions"></div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="app-loading" id="app-loading" role="status" aria-live="polite">
+        <div>
+          <span class="app-loading-mark" aria-hidden="true"></span>
+          <strong>Opening your active ride</strong>
+          <p>Loading the route, rider details and live trip controls.</p>
+        </div>
+      </div>
+
+      <div class="app-error" id="app-error" hidden>
+        <div class="app-error-card glass-card">
+          <p class="eyebrow">Connection lost</p>
+          <h1 id="app-error-title">The city is out of reach</h1>
+          <p id="app-error-message">We could not load this page.</p>
+          <a class="btn btn-primary" id="app-error-action" href="/">Try again</a>
+        </div>
+      </div>
+
+      <div id="app-content" hidden>
+        <div class="app-banner" id="app-banner" hidden></div>
+
+        <header class="page-head">
+          <div>
+            <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Active ride</p>
+            <h1>Drive safe. <span class="gradient-text">Stay present.</span></h1>
+            <p id="trip-subtitle">Follow the route and update each stage as you move.</p>
+          </div>
+          <div class="page-head-meta">
+            <span class="status-badge" id="trip-status-badge">Driver assigned</span>
+            <span class="pill pill-soft" id="trip-meta-pill">Location sharing on</span>
+          </div>
+        </header>
+
+        <div class="ride-grid">
+          <section class="map-card glass-card" aria-labelledby="trip-map-title">
+            <div class="map-toolbar">
+              <div class="map-mode">
+                <button type="button" class="is-active" aria-current="true">Trip route</button>
+              </div>
+              <span class="map-toolbar-note" id="trip-map-note"><i aria-hidden="true"></i>Live location on</span>
+            </div>
+            <h2 class="sr-only" id="trip-map-title">Active trip map</h2>
+            <div class="map-canvas" id="trip-map" aria-label="Map showing the active rider route"></div>
+            <div class="map-overlay" aria-live="polite">
+              <span class="map-legend">
+                <span><i aria-hidden="true"></i>Pickup</span>
+                <span><i aria-hidden="true"></i>Drop</span>
+              </span>
+              <span id="trip-map-status">Route ready</span>
+            </div>
+          </section>
+
+          <aside class="ride-panel" aria-label="Active ride details">
+            <section class="glass-card ride-summary" aria-labelledby="trip-summary-title">
+              <div class="card-head">
+                <div>
+                  <p class="card-eyebrow">Your fare</p>
+                  <h2 id="trip-summary-title"><span id="trip-fare">—</span></h2>
+                  <p id="trip-fare-copy">Agreed fare for this ride.</p>
+                </div>
+                <span class="ride-id" id="trip-id">—</span>
+              </div>
+
+              <div class="ride-stops">
+                <div class="ride-stop">
+                  <span class="route-dot" aria-hidden="true">A</span>
+                  <div>
+                    <small>Pickup</small>
+                    <strong id="trip-pickup">Loading pickup</strong>
+                  </div>
+                </div>
+                <div class="ride-stop">
+                  <span class="route-dot is-drop" aria-hidden="true">B</span>
+                  <div>
+                    <small>Drop</small>
+                    <strong id="trip-drop">Loading drop</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ride-facts">
+                <div><span>Distance</span><strong id="trip-distance">—</strong></div>
+                <div><span>Vehicle</span><strong id="trip-vehicle">—</strong></div>
+                <div><span>Est. time</span><strong id="trip-duration">—</strong></div>
+              </div>
+            </section>
+
+            <section class="glass-card driver-card" aria-labelledby="rider-card-title">
+              <div class="card-head">
+                <div>
+                  <p class="card-eyebrow">Rider</p>
+                  <h2 id="rider-card-title">Your passenger</h2>
+                </div>
+                <span class="pill pill-soft">Verified rider</span>
+              </div>
+
+              <div class="driver-identity">
+                <span class="driver-avatar" id="rider-avatar" aria-hidden="true">SD</span>
+                <div>
+                  <strong id="rider-name">SheDrive rider</strong>
+                  <small>Waiting for pickup details</small>
+                </div>
+              </div>
+
+              <div class="safety-inline">
+                <span aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.2 2.8 7.7 7 9 4.2-1.3 7-4.8 7-9V6l-7-3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </span>
+                <p>Keep the ride on the planned route. Use the SOS orb below if you or your rider need urgent help.</p>
+              </div>
+            </section>
+
+            <section class="glass-card trip-control-card" aria-labelledby="trip-control-title">
+              <div class="card-head">
+                <div>
+                  <p class="card-eyebrow">Trip controls</p>
+                  <h2 id="trip-control-title">Next stage</h2>
+                  <p id="trip-control-copy">Let the rider know when you arrive.</p>
+                </div>
+              </div>
+
+              <ol class="ride-timeline" id="trip-timeline">
+                <li data-step="accepted"><span></span><div><strong>Assigned</strong><small>Head to the pickup.</small></div></li>
+                <li data-step="arriving"><span></span><div><strong>Arriving</strong><small>You told the rider you are close.</small></div></li>
+                <li data-step="in_progress"><span></span><div><strong>On the way</strong><small>Ride started with the rider aboard.</small></div></li>
+                <li data-step="completed"><span></span><div><strong>Completed</strong><small>Fare is added to your earnings.</small></div></li>
+              </ol>
+
+              <button type="button" class="btn btn-primary" id="trip-primary">I have arrived</button>
+              <button type="button" class="sos-orb" id="trip-sos" hidden aria-label="Trigger emergency SOS">
+                <span class="sos-orb-ring" aria-hidden="true"></span>
+                <span class="sos-orb-ring" aria-hidden="true"></span>
+                <span class="sos-orb-core"><strong>SOS</strong><small>Safety</small></span>
+              </button>
+              <button type="button" class="btn btn-danger" id="trip-cancel">Cancel ride</button>
+              <a class="btn btn-primary" id="trip-summary" href="/history.html" hidden>Trip summary &amp; rating</a>
+              <a class="btn btn-ghost" id="trip-home" href="/driver.html" hidden>Back to dashboard</a>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <div class="modal" id="cancel-modal" hidden>
+      <div class="modal-backdrop" data-close-cancel></div>
+      <div class="modal-card glass-card" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+        <button type="button" class="icon-btn" id="cancel-close" aria-label="Close cancel dialog" style="position:absolute;top:1rem;right:1rem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
+        <p class="eyebrow">Cancel ride</p>
+        <h2 id="cancel-title">Cancel this trip?</h2>
+        <p>A cancellation is shared with your rider and can affect your acceptance rate.</p>
+        <label class="app-field">
+          <span>Reason (optional)</span>
+          <textarea id="cancel-reason" rows="3" maxlength="160" placeholder="Vehicle issue"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close-cancel>Keep ride</button>
+          <button type="button" class="btn btn-danger" id="cancel-confirm">Cancel ride</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal sos-modal" id="sos-modal" hidden>
+      <div class="modal-backdrop" data-close-sos></div>
+      <div class="modal-card sos-card glass-card" role="dialog" aria-modal="true" aria-labelledby="sos-title">
+        <div class="sos-halo" aria-hidden="true"></div>
+        <button type="button" class="icon-btn sos-close" id="sos-close" aria-label="Close SOS dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+        </button>
+
+        <div id="sos-confirm-view">
+          <p class="eyebrow sos-eyebrow"><span class="pulse-dot" aria-hidden="true"></span>Emergency safety</p>
+          <h2 id="sos-title">Alert the safety desk?</h2>
+          <p>Your live location, active trip and account will be shared with the SheDrive safety team. Your emergency contacts will be alerted through the demo notification service.</p>
+          <div class="sos-location-fact">
+            <span aria-hidden="true">◎</span>
+            <div>
+              <strong>Location sharing</strong>
+              <small id="sos-location-copy">Using your live position when available.</small>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-close-sos>I am safe</button>
+            <button type="button" class="btn btn-danger" id="sos-confirm">Send SOS now</button>
+          </div>
+        </div>
+
+        <div id="sos-sent-view" hidden>
+          <div class="sos-sent-mark" aria-hidden="true">✓</div>
+          <p class="eyebrow sos-eyebrow">Safety desk alerted</p>
+          <h2 id="sos-sent-title">Help is on the way.</h2>
+          <p id="sos-sent-copy">The safety team can see your trip and last shared location.</p>
+          <dl class="receipt-facts sos-receipt">
+            <div><dt>Status</dt><dd id="sos-status">Open</dd></div>
+            <div><dt>Contacts notified</dt><dd id="sos-contacts">0</dd></div>
+            <div><dt>Reference</dt><dd id="sos-reference">—</dd></div>
+          </dl>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-primary" data-close-sos>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/driver-ride.js"></script>
+  </body>
+</html>

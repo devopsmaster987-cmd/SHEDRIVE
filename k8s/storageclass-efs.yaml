@@ -1,0 +1,21 @@
+# AWS EFS access point storage class. Replace fs-REPLACE_ME with the EFS file
+# system ID created in docs/aws-setup.md. ReadWriteMany lets both backend
+# replicas read driver licence documents uploaded through either pod.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: shedrive-efs
+  labels:
+    app.kubernetes.io/part-of: shedrive
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: fs-REPLACE_ME
+  basePath: /shedrive
+  directoryPerms: "700"
+  uid: "1000"
+  gid: "1000"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+mountOptions:
+  - tls

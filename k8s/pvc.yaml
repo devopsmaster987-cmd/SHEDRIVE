@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shedrive-license-docs
+  namespace: shedrive
+  labels:
+    app.kubernetes.io/name: shedrive-backend
+    app.kubernetes.io/part-of: shedrive
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: shedrive-efs
+  resources:
+    requests:
+      storage: 5Gi
